@@ -77,6 +77,12 @@ class my_certificates_table extends \table_sql {
             $headers[] = get_string('file');
         }
 
+        if ($this->show_share_on_linkedin()) {
+            $columns[] = 'linkedin';
+            $headers[] = get_string('shareonlinkedin', 'tool_certificate');
+            $this->no_sorting('linkedin');
+        }
+
         $this->define_columns($columns);
         $this->define_headers($headers);
         $this->collapsible(false);
@@ -183,5 +189,39 @@ class my_certificates_table extends \table_sql {
         $total = certificate::count_issues_for_user($this->userid);
         $this->out($total, false);
         exit;
+    }
+
+    public function col_linkedin($issue) {
+        global $OUTPUT;
+
+        $params = [
+            'name' => $issue->name,
+            'issueYear' => date('Y', $issue->timecreated),
+            'issueMonth' => date('m', $issue->timecreated),
+            'certId' => $issue->code,
+            'certUrl' => template::verification_url($issue->code)
+        ];
+
+        if ($issue->expires !== '0') {
+            $params['expirationYear'] = date('Y', $issue->expires);
+            $params['expirationMonth'] = date('m', $issue->expires);
+        }
+
+        $organization_id = get_config('tool_certificate', 'linkedinorganizationid');
+        if ($organization_id !== '') {
+            $params['organizationId'] = $organization_id;
+        }
+
+        $icon = new \pix_icon('linkedin', get_string('shareonlinkedin', 'tool_certificate'), 'tool_certificate');
+        $link = new \moodle_url('https://www.linkedin.com/profile/add', $params);
+
+        return $OUTPUT->action_link($link, '', null, [
+            'target' => '_blank',
+            'class' => 'd-flex'
+        ], $icon);
+    }
+
+    private function show_share_on_linkedin() {
+        return get_config('tool_certificate', 'show_shareonlinkedin');
     }
 }
